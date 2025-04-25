@@ -10,19 +10,22 @@ public class StackOverflow {
     private static StackOverflow instance;
     private final Map<Integer, User> users;
     private final Map<String, Question> questions;
-    private final Map<String, Answer> answers;
-    private final List<Tag> tags;
+    private static final int QUESTION_REPUTATION = 5;
+    private static final int ANSWER_REPUTATION = 10;
+    private static final int COMMENT_REPUTATION = 2;
 
     private StackOverflow() {
         users = new HashMap<>();
         questions = new HashMap<>();
-        answers = new HashMap<>();
-        tags = new ArrayList<>();
     }
 
     public static synchronized StackOverflow getInstance() {
         if( instance == null) {
-            instance = new StackOverflow();
+            synchronized (StackOverflow.class) {
+                if (instance == null) {
+                    instance = new StackOverflow();
+                }
+            }
         }
         return instance;
     }
@@ -34,52 +37,72 @@ public class StackOverflow {
         return user;
     }
 
-    public Question askQuestion(User user, String title, String content, List<String> tags) {
-        Question question = user.askQuestion(title, content, tags);
+    public Question askQuestion(User user, String title, StringBuilder content, List<String> tags) {
+        Question question = new Question(user, title, content, tags);
         questions.put(question.getId(), question);
-        for (Tag tag : question.getTags()) {
-            if(!this.tags.contains(tag)) this.tags.add(tag);
-        }
+        user.updateReputation(QUESTION_REPUTATION); // +5 reputation for asking a question
         return question;
     }
 
-    public Answer answerQuestion(User user, Question question, String content) {
-        Answer answer = user.answerQuestion(question, content);
-        answers.put(answer.getId(), answer);
+    public Answer answerQuestion(User user, Question question, StringBuilder content) {
+        Answer answer = new Answer(user, content);
+        questions.get(question.getId()).addAnswer(answer);
+        user.updateReputation(ANSWER_REPUTATION); // +10 reputation for answering a question
         return answer;
     }
 
-    public Comment addComment(User user, Commentable commentable, String content) {
-        return user.addComment(commentable, content);
+    public Comment addCommentOnQuestion(User user, Question question, StringBuilder content) {
+        if (question.getAuthor().equals(user)) {
+            System.out.println("You cannot comment on your own question");
+            return null;
+        }
+        Comment comment = new Comment(user, content);
+        questions.get(question.getId()).addComment(comment);
+        user.updateReputation(COMMENT_REPUTATION); // +2 reputation for commenting
+        return comment;
+    }
+
+    public Comment addCommentOnAnswer(User user, Question question, Answer answer, StringBuilder content) {
+        if (question.getAuthor().equals(user)) {
+            System.out.println("You cannot comment on your own question");
+            return null;
+        }
+        Comment comment = new Comment(user, content);
+        questions.get(question.getId()).addCommentToAnswer(answer,comment);
+        user.updateReputation(COMMENT_REPUTATION); // +2 reputation for commenting
+        return comment;
     }
 
     public void voteQuestion(User user, Question question, int value) {
-        question.vote(user, value);
+        questions.get(question.getId()).vote(user, value);
     }
 
-    public void voteAnswer(User user, Answer answer, int value) {
-        answer.vote(user, value);
+    public void voteAnswer(User user, Question question, Answer answer, int value) {
+        questions.get(question.getId()).voteAnswer(user, answer, value);
     }
 
-    public void acceptAnswer(Answer answer) {
-        answer.markAsAccepted();
+    public void acceptAnswer(Question question, Answer answer) {
+        questions.get(question.getId()).acceptAnswer(answer);
     }
 
     public List<Question> searchQuestions(String query) {
         return questions.values().stream()
-                .filter(q -> q.getTitle().toLowerCase().contains(query.toLowerCase()) ||
-                        q.getContent().toLowerCase().contains(query.toLowerCase()) ||
-                        q.getTags().stream().anyMatch(t -> t.getName().equalsIgnoreCase(query)))
+                .filter(q -> q.getTitle().equalsIgnoreCase(query) ||
+                        q.getContent().toString().toLowerCase().contains(query.toLowerCase()) ||
+                        q.getTags().stream().anyMatch(t -> t.name().equalsIgnoreCase(query)))
                 .collect(Collectors.toList());
     }
 
     public List<Question> getQuestionsByUser(User user) {
-        return user.getQuestions();
+        List<Question> userQuestions = new ArrayList<>();
+        userQuestions = questions.values().stream()
+                .filter(q -> q.getAuthor().equals(user))
+                .collect(Collectors.toList());
+        return userQuestions;
     }
 
     // Getters
     public User getUser(int id) { return users.get(id); }
     public Question getQuestion(String id) { return questions.get(id); }
-    public Answer getAnswer(String id) { return answers.get(id); }
-    public Boolean getTagExists(Tag tag) { return tags.contains(tag); }
+
 }

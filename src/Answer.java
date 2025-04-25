@@ -1,26 +1,24 @@
 package src;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 public class Answer implements Votable, Commentable {
     private final String id;
-    private final String content;
+    private StringBuilder content;
     private final User author;
-    private final Question question;
     private boolean isAccepted;
-    private final Date creationDate;
+    private final LocalDate creationDate;
     private final List<Comment> comments;
     private final List<Vote> votes;
 
-    public Answer(User author, Question question, String content) {
+    public Answer(User author, StringBuilder content) {
         this.id = generateId();
         this.author = author;
-        this.question = question;
         this.content = content;
-        this.creationDate = new Date();
+        this.creationDate = LocalDate.now();
         this.votes = new ArrayList<>();
         this.comments = new ArrayList<>();
         this.isAccepted = false;
@@ -62,14 +60,23 @@ public class Answer implements Votable, Commentable {
     }
 
     private String generateId() {
-        return "ANS" + UUID.randomUUID();
+        return "ANS" + UUID.randomUUID().toString().substring(0,8);
     }
 
     // Getters
     public String getId() { return id; }
     public User getAuthor() { return author; }
-    public Question getQuestion() { return question; }
-    public String getContent() { return content; }
-    public Date getCreationDate() { return creationDate; }
+    public StringBuilder getContent() { return content; }
+    public LocalDate getCreationDate() { return creationDate; }
     public boolean isAccepted() { return isAccepted; }
+    public void updateContent(StringBuilder content) {
+        this.content = content;
+    }
+    public void updateComment(Comment comment, StringBuilder content) {
+        comments.stream()
+                .filter(c -> c.getId().equals(comment.getId()))
+                .findFirst()
+                .ifPresentOrElse(c -> c.updateContent(content),
+                        () -> System.out.println("Comment not found"));
+    }
 }

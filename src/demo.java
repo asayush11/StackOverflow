@@ -2,7 +2,7 @@ package src;
 import java.util.Arrays;
 import java.util.List;
 
-public class main {
+public class demo {
     public static void main(String[] args) {
         StackOverflow system = StackOverflow.getInstance();
 
@@ -13,43 +13,43 @@ public class main {
 
         // Alice asks a question
         Question javaQuestion = system.askQuestion(alice, "What is polymorphism in Java?",
-                "Can someone explain polymorphism in Java with an example?",
+                new StringBuilder("Can someone explain polymorphism in Java with an example?"),
                 Arrays.asList("java", "oop"));
 
         // Bob answers Alice's question
         Answer bobAnswer = system.answerQuestion(bob, javaQuestion,
-                "Polymorphism in Java is the ability of an object to take on many forms...");
+                new StringBuilder("Polymorphism in Java is the ability of an object to take on many forms..."));
 
         // Charlie comments on the question
-        system.addComment(charlie, javaQuestion, "Great question! I'm also interested in learning about this.");
+        system.addCommentOnQuestion(charlie, javaQuestion, new StringBuilder("Great question! I'm also interested in learning about this."));
 
         // Alice comments on Bob's answer
-        system.addComment(alice, bobAnswer, "Thanks for the explanation! Could you provide a code example?");
+        system.addCommentOnAnswer(alice, javaQuestion, bobAnswer, new StringBuilder("Thanks for the explanation! Could you provide a code example?"));
 
         // Charlie votes on the question and answer
         system.voteQuestion(charlie, javaQuestion, 1);  // Upvote
-        system.voteAnswer(charlie, bobAnswer, 1);  // Upvote
+        system.voteAnswer(charlie, javaQuestion, bobAnswer, 1);  // Upvote
 
         // Alice accepts Bob's answer
-        system.acceptAnswer(bobAnswer);
+        system.acceptAnswer(javaQuestion, bobAnswer);
 
         // Bob asks another question
         Question pythonQuestion = system.askQuestion(bob, "How to use list comprehensions in Python?",
-                "I'm new to Python and I've heard about list comprehensions. Can someone explain how to use them?",
+                new StringBuilder("I'm new to Python and I've heard about list comprehensions. Can someone explain how to use them?"),
                 Arrays.asList("python", "list-comprehension"));
 
         // Alice answers Bob's question
         Answer aliceAnswer = system.answerQuestion(alice, pythonQuestion,
-                "List comprehensions in Python provide a concise way to create lists...");
+                new StringBuilder("List comprehensions in Python provide a concise way to create lists..."));
 
         // Charlie votes on Bob's question and Alice's answer
         system.voteQuestion(charlie, pythonQuestion, 1);  // Upvote
-        system.voteAnswer(charlie, aliceAnswer, 1);  // Upvote
+        system.voteAnswer(charlie, pythonQuestion, aliceAnswer, 1);  // Upvote
 
         // Print out the current state
         System.out.println("Question: " + javaQuestion.getTitle());
         System.out.println("Asked by: " + javaQuestion.getAuthor().getUsername());
-        System.out.println("Tags: " + javaQuestion.getTags().stream().map(Tag::getName).reduce((a, b) -> a + ", " + b).orElse(""));
+        System.out.println("Tags: " + javaQuestion.getTags().stream().map(Tag::name).reduce((a, b) -> a + ", " + b).orElse(""));
         System.out.println("Votes: " + javaQuestion.getVoteCount());
         System.out.println("Comments: " + javaQuestion.getComments().size());
         System.out.println("\nAnswer by " + bobAnswer.getAuthor().getUsername() + ":");
